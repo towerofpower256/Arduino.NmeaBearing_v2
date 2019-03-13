@@ -67,13 +67,30 @@ void serialEvent() {
       Serial.println(nmeaParser.getSentence());
       Serial.print("Desc: "); Serial.print(QUOTE_CHAR); Serial.print(nmeaParser.getMessageDescription()); Serial.println(QUOTE_CHAR);
 
-      if (nmeaParser.getMessageDescription() == "HDG") {
+      String newValue = nmeaParser.getTerm(1);
+      Serial.print(F("New value: ")); Serial.println(newValue);
+      
+      if (nmeaParser.getMessageDescription() == "HDT") {
+        Serial.println(F("Is true heading update"));
+        
+        if (newValue != "") {
+          bearingT = newValue.toFloat();
+          shouldUpdateLcd = true;
+        } 
+      }
+      else if (nmeaParser.getMessageDescription() == "HDM") {
+        Serial.println(F("Is magnetic heading update"));
+        
+        if (newValue != "") {
+          bearingM = newValue.toFloat();
+          shouldUpdateLcd = true;
+        } 
+      }
+      else if (nmeaParser.getMessageDescription() == "HDG") {
         Serial.println(F("Is a heading update"));
 
         String hdgType = nmeaParser.getTerm(2);
-        String newValue = nmeaParser.getTerm(1);
-        Serial.print(F("New value: ")); Serial.println(newValue);
-
+        
         if (newValue != "") {
           if (hdgType == String(MAGNETIC_BEARING_NMEA_CHAR)) {
             Serial.println(F("Is valid magnetic bearing"));
