@@ -86,6 +86,7 @@ void serialEvent() {
           shouldUpdateLcd = true;
         } 
       }
+      /*
       else if (nmeaParser.getMessageDescription() == "HDG") {
         Serial.println(F("Is a heading update"));
 
@@ -104,6 +105,7 @@ void serialEvent() {
           }
         }
       }
+      */
 
       if (shouldUpdateLcd) UpdateLcd();
     }
