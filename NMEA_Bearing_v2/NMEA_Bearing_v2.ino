@@ -1,5 +1,39 @@
+/*
+ * NMEA Bearing Reader v2
+ * by David McDonald 1203/2019
+ * Someone wanted to be able to display HDT (true heading) / HDM (magnetic heading)
+ * NMEA-0183 data to an LCD display so they could hook an Ardunio up to an NMEA-0183 device
+ * and go from there.
+ * 
+ * This program & setup is designed to listen for HDT/HDM NMEA-0183 messages
+ * on the hardware serial interface, and output them to the LCD display.
+ * 
+ * It'll also listen for a button press which will reset the remembered data.
+ * Buttons are the ones on the Freetronics LCD Shield, or read from a single analog pin.
+ */
+
 #include <LiquidCrystal.h>
 #include "NmeaParser.h"
+
+// Freetronics button stuff
+#define BUTTON_ADC_PIN            A0  // A0 is the button ADC input
+#define RIGHT_10BIT_ADC           0  // right
+#define UP_10BIT_ADC            145  // up
+#define DOWN_10BIT_ADC          329  // down
+#define LEFT_10BIT_ADC          505  // left
+#define SELECT_10BIT_ADC        741  // right
+#define BUTTONHYSTERESIS         10  // hysteresis for valid button sensing window
+//return values for ReadButtons()
+#define BUTTON_NONE               0  // 
+#define BUTTON_RIGHT              1  // 
+#define BUTTON_UP                 2  // 
+#define BUTTON_DOWN               3  // 
+#define BUTTON_LEFT               4  // 
+#define BUTTON_SELECT             5  // 
+
+byte buttonJustPressed  = false;         //this will be true after a ReadButtons() call if triggered
+byte buttonJustReleased = false;         //this will be true after a ReadButtons() call if triggered
+byte buttonWas          = BUTTON_NONE;   //used by ReadButtons() for detection of button events
 
 // Constants
 const char SPACE_CHAR = ' ';
@@ -18,6 +52,7 @@ const char TRUE_BEARING_DISPLAY_CHAR = 'T';
 // Working variables
 float bearingM = -1;
 float bearingT = -1;
+bool resetButtonDown = false;
 
 // Messages
 const char STARTUP_MSG[] = "Starting...";
@@ -43,6 +78,10 @@ void setup() {
   lcd.clear();
   lcd.print(STARTUP_MSG);
 
+  // Setup some button stuff
+  pinMode( BUTTON_ADC_PIN, INPUT );         //ensure A0 is an input
+  digitalWrite( BUTTON_ADC_PIN, LOW );      //ensure pullup is off on A0
+
   // Ready
   Serial.println("Ready!");
   UpdateLcd();
@@ -51,7 +90,14 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-  
+  // Button stuff
+  byte button = ReadButtons();
+  if (button == BUTTON_SELECT && !resetButtonDown) {
+    resetButtonDown = true;
+    Reset();
+  } else if (button != BUTTON_SELECT && resetButtonDown) {
+    resetButtonDown = false;
+  }
 }
 
 // Function to run whenever there's a serial event on the hardware serial RX
@@ -112,6 +158,14 @@ void serialEvent() {
   }
 }
 
+// Reset the display & remembered data
+void Reset() {
+  Serial.println(F("Resetting"));
+  bearingM = -1;
+  bearingT = -1;
+  UpdateLcd();
+}
+
 
 void UpdateLcd() {
   
@@ -160,4 +214,57 @@ float ConstrainAngle(float x) {
   x = x - 180;
 
   return x;
+}
+
+// Read the buttons
+byte ReadButtons()
+{
+   unsigned int buttonVoltage;
+   byte button = BUTTON_NONE;   // return no button pressed if the below checks don't write to btn
+   
+   //read the button ADC pin voltage
+   buttonVoltage = analogRead( BUTTON_ADC_PIN );
+   //sense if the voltage falls within valid voltage windows
+   if( buttonVoltage < ( RIGHT_10BIT_ADC + BUTTONHYSTERESIS ) )
+   {
+      button = BUTTON_RIGHT;
+   }
+   else if(   buttonVoltage >= ( UP_10BIT_ADC - BUTTONHYSTERESIS )
+           && buttonVoltage <= ( UP_10BIT_ADC + BUTTONHYSTERESIS ) )
+   {
+      button = BUTTON_UP;
+   }
+   else if(   buttonVoltage >= ( DOWN_10BIT_ADC - BUTTONHYSTERESIS )
+           && buttonVoltage <= ( DOWN_10BIT_ADC + BUTTONHYSTERESIS ) )
+   {
+      button = BUTTON_DOWN;
+   }
+   else if(   buttonVoltage >= ( LEFT_10BIT_ADC - BUTTONHYSTERESIS )
+           && buttonVoltage <= ( LEFT_10BIT_ADC + BUTTONHYSTERESIS ) )
+   {
+      button = BUTTON_LEFT;
+   }
+   else if(   buttonVoltage >= ( SELECT_10BIT_ADC - BUTTONHYSTERESIS )
+           && buttonVoltage <= ( SELECT_10BIT_ADC + BUTTONHYSTERESIS ) )
+   {
+      button = BUTTON_SELECT;
+   }
+   //handle button flags for just pressed and just released events
+   if( ( buttonWas == BUTTON_NONE ) && ( button != BUTTON_NONE ) )
+   {
+      //the button was just pressed, set buttonJustPressed, this can optionally be used to trigger a once-off action for a button press event
+      //it's the duty of the receiver to clear these flags if it wants to detect a new button change event
+      buttonJustPressed  = true;
+      buttonJustReleased = false;
+   }
+   if( ( buttonWas != BUTTON_NONE ) && ( button == BUTTON_NONE ) )
+   {
+      buttonJustPressed  = false;
+      buttonJustReleased = true;
+   }
+   
+   //save the latest button value, for change event detection next time round
+   buttonWas = button;
+   
+   return( button );
 }
