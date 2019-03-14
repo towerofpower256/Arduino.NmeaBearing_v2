@@ -20,8 +20,8 @@
 const char SPACE_CHAR = ' ';
 const char COMMA_CHAR = ',';
 const char QUOTE_CHAR = '"';
-const char DIFF_POSITIVE_CHAR = 'E';
-const char DIFF_NEGATIVE_CHAR = 'W';
+const char DIFF_POSITIVE_CHAR = 'W';
+const char DIFF_NEGATIVE_CHAR = 'E';
 const char BLANK_NUMBER_CHAR = '-';
 const char COLON_CHAR = ':';
 const char MAGNETIC_BEARING_NMEA_CHAR = 'M';
@@ -143,14 +143,14 @@ void UpdateLcd() {
   lcd.print(MAGNETIC_BEARING_DISPLAY_CHAR);
   lcd.print(COLON_CHAR);
   if (bearingM < 0) lcd.print(BLANK_NUMBER_CHAR);
-  else lcd.print(bearingM);
+  else lcd.print(StringPadNum(bearingM));
 
   // Print true bearing
   lcd.setCursor(0,0);
   lcd.print(TRUE_BEARING_DISPLAY_CHAR);
   lcd.print(COLON_CHAR);
   if (bearingT < 0) lcd.print(BLANK_NUMBER_CHAR);
-  else lcd.print(bearingT);
+  else lcd.print(StringPadNum(bearingT));
 
   // Update and print difference / compass error
   // Magnetic compass error = true bearing - magnetic bearing
@@ -181,4 +181,14 @@ float ConstrainAngle(float x) {
   x = x - 180;
 
   return x;
+}
+
+String StringPadNum(float x) {
+  String r = String();
+  //r.reserve(8); // Reserve 6 characters: 3 digits, a dot, and 2 decimal digits
+  if (x < 100) r.concat(SPACE_CHAR);
+  if (x < 10) r.concat(SPACE_CHAR);
+  r.concat(x);
+
+  return r;
 }
