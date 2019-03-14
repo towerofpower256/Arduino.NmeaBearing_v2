@@ -16,6 +16,7 @@
 #include "NmeaParser.h"
 
 // Freetronics button stuff
+#define USING_BUTTONS             1  // Are the buttons actually being used?
 #define BUTTON_ADC_PIN            A0  // A0 is the button ADC input
 #define RIGHT_10BIT_ADC           0  // right
 #define UP_10BIT_ADC            145  // up
@@ -91,12 +92,14 @@ void loop() {
   // put your main code here, to run repeatedly:
 
   // Button stuff
-  byte button = ReadButtons();
-  if (button == BUTTON_SELECT && !resetButtonDown) {
-    resetButtonDown = true;
-    Reset();
-  } else if (button != BUTTON_SELECT && resetButtonDown) {
-    resetButtonDown = false;
+  if (USING_BUTTONS) {
+    byte button = ReadButtons();
+    if (button == BUTTON_SELECT && !resetButtonDown) {
+      resetButtonDown = true;
+      Reset();
+    } else if (button != BUTTON_SELECT && resetButtonDown) {
+      resetButtonDown = false;
+    }
   }
 }
 
