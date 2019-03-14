@@ -20,8 +20,8 @@
 const char SPACE_CHAR = ' ';
 const char COMMA_CHAR = ',';
 const char QUOTE_CHAR = '"';
-const char DIFF_POSITIVE_CHAR = 'W';
-const char DIFF_NEGATIVE_CHAR = 'E';
+const char DIFF_POSITIVE_CHAR = 'E';
+const char DIFF_NEGATIVE_CHAR = 'W';
 const char BLANK_NUMBER_CHAR = '-';
 const char COLON_CHAR = ':';
 const char MAGNETIC_BEARING_NMEA_CHAR = 'M';
